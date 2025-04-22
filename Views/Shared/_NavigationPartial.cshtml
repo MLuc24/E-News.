@@ -1,0 +1,210 @@
+﻿@{
+    string? avatarUrl = null;
+    if (User.Identity.IsAuthenticated)
+    {
+        var userIdClaim = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier);
+        if (userIdClaim != null && int.TryParse(userIdClaim.Value, out int userId))
+        {
+            using (var scope = Context.RequestServices.CreateScope())
+            {
+                var db = scope.ServiceProvider.GetRequiredService<WebBaoDienTu.Models.BaoDienTuContext>();
+                var profile = db.UserProfiles.FirstOrDefault(p => p.UserId == userId);
+                if (profile?.AvatarUrl != null)
+                {
+                    avatarUrl = profile.AvatarUrl;
+                }
+            }
+        }
+    }
+}
+
+<nav class="navbar navbar-expand-lg navbar-light">
+    <div class="container">
+        <!-- Logo -->
+        <a class="navbar-brand me-2" asp-controller="Home" asp-action="Index">
+            <img src="~/images/logo.png" alt="Logo" />
+        </a>
+
+        <!-- Hamburger menu for mobile -->
+        <button class="navbar-toggler" type="button" data-bs-toggle="collapse"
+                data-bs-target="#navbarContent" aria-controls="navbarContent"
+                aria-expanded="false" aria-label="Toggle navigation">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+
+        <!-- Mobile user controls -->
+        <div class="d-flex d-lg-none ms-auto me-2 order-lg-last align-items-center">
+            @if (User.Identity != null && User.Identity.IsAuthenticated)
+            {
+                <!-- Notification bell icon -->
+                <div class="nav-item dropdown position-relative notification-wrapper me-2">
+                    <a class="nav-link position-relative" href="#" id="mobileNotificationDropdown"
+                       role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                        <i class="fas fa-bell"></i>
+                        <span class="badge bg-danger notification-count" id="mobile-notification-badge" style="display: none;">0</span>
+                    </a>
+                    <div class="dropdown-menu dropdown-menu-end notification-dropdown">
+                        <div class="dropdown-header d-flex justify-content-between align-items-center">
+                            <span>Thông báo</span>
+                            <button class="btn btn-sm btn-link" id="mobileMarkAllAsRead">Đánh dấu đã đọc</button>
+                        </div>
+                        <div class="dropdown-divider"></div>
+                        <div id="mobile-notification-container">
+                            <div class="dropdown-item text-center text-muted" id="mobile-no-notifications">Không có thông báo</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- User menu mobile -->
+                <div class="nav-item dropdown me-2">
+                    <a class="nav-link" href="#" id="mobileUserDropdown" data-bs-toggle="dropdown">
+                        @if (!string.IsNullOrEmpty(avatarUrl))
+                        {
+                            <img src="~/uploads/avatars/@avatarUrl" class="rounded-circle account-avatar" alt="Avatar" style="width: 24px; height: 24px;">
+                        }
+                        else
+                        {
+                            <i class="fas fa-user-circle"></i>
+                        }
+                    </a>
+                    <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="mobileUserDropdown">
+                        @{
+                            await Html.RenderPartialAsync("_UserMenuContent");
+                        }
+                    </ul>
+                </div>
+            }
+            else
+            {
+                <!-- Login/Register icons for mobile -->
+                <div class="d-flex">
+                    <a class="nav-link me-2" href="#" data-bs-toggle="modal" data-bs-target="#loginModal">
+                        <i class="fas fa-right-to-bracket"></i>
+                    </a>
+                    <a class="nav-link" href="#" data-bs-toggle="modal" data-bs-target="#registerModal">
+                        <i class="fas fa-user-plus"></i>
+                    </a>
+                </div>
+            }
+
+            <!-- Search toggle button for mobile/tablet -->
+            <button class="btn btn-sm btn-outline-secondary ms-1" type="button" data-bs-toggle="collapse"
+                    data-bs-target="#mobileSearchForm" aria-expanded="false" aria-controls="mobileSearchForm">
+                <i class="fas fa-search"></i>
+            </button>
+        </div>
+
+        <!-- Collapsible content -->
+        <div class="collapse navbar-collapse" id="navbarContent">
+            <!-- Categories menu -->
+            @if (ViewBag.HideNavElements != true)
+            {
+                <ul class="navbar-nav me-auto mb-2 mb-lg-0">
+                    @if (ViewBag.Categories is IEnumerable<WebBaoDienTu.Models.Category> categories)
+                    {
+                        foreach (var category in categories)
+                        {
+                            <li class="nav-item">
+                                <a class="nav-link" asp-controller="Home" asp-action="Category" asp-route-id="@category.CategoryId">
+                                    @category.CategoryName
+                                </a>
+                            </li>
+                        }
+                    }
+                </ul>
+
+                <!-- Search form for desktop -->
+                <div class="d-none d-lg-block mx-lg-2">
+                    <form class="d-flex" asp-controller="Home" asp-action="Search" method="get">
+                        <div class="input-group">
+                            <input class="form-control" type="search" name="query" placeholder="Nhập vào đây để tìm kiếm...">
+                            <button class="btn btn-search" type="submit">
+                                <i class="fas fa-magnifying-glass"></i>
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            }
+
+            <!-- Desktop user controls -->
+            <div class="d-none d-lg-flex align-items-center ms-auto">
+                @if (User.Identity != null && User.Identity.IsAuthenticated)
+                {
+                    <!-- Notification bell -->
+                    <div class="nav-item dropdown me-3 position-relative notification-wrapper">
+                        <a class="nav-link position-relative" href="#" id="notificationDropdown" data-bs-toggle="dropdown">
+                            <i class="fas fa-bell"></i>
+                            <span class="badge bg-danger notification-count" id="notification-badge" style="display: none;">0</span>
+                        </a>
+                        <div class="dropdown-menu dropdown-menu-end notification-dropdown">
+                            <div class="dropdown-header d-flex justify-content-between align-items-center">
+                                <span>Thông báo</span>
+                                <button class="btn btn-sm btn-link" id="markAllAsRead">Đánh dấu đã đọc</button>
+                            </div>
+                            <div class="dropdown-divider"></div>
+                            <div id="notification-container">
+                                <div class="dropdown-item text-center text-muted" id="no-notifications">Không có thông báo</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- User dropdown -->
+                    <div class="nav-item dropdown">
+                        <a class="nav-link dropdown-toggle" href="#" id="userDropdown" data-bs-toggle="dropdown">
+                            <span class="username d-none d-sm-inline">@(User.Claims.FirstOrDefault(c => c.Type == "DisplayName")?.Value ?? User.Claims.FirstOrDefault(c => c.Type == "FullName")?.Value ?? User.Identity.Name)</span>
+                            @if (!string.IsNullOrEmpty(avatarUrl))
+                            {
+                                <img src="~/uploads/avatars/@avatarUrl" class="rounded-circle account-avatar" alt="Avatar">
+                            }
+                            else
+                            {
+                                <i class="fas fa-user-circle account-icon"></i>
+                            }
+                        </a>
+                        <ul class="dropdown-menu dropdown-menu-end">
+                            @{
+                                await Html.RenderPartialAsync("_UserMenuContent");
+                            }
+                        </ul>
+                    </div>
+                }
+                else
+                {
+                    <!-- Login/Register links -->
+                    <ul class="navbar-nav auth-links flex-row">
+                        <li class="nav-item mx-2">
+                            <a class="nav-link" href="#" data-bs-toggle="modal" data-bs-target="#registerModal">
+                                <i class="fas fa-user-plus me-1"></i> Đăng ký
+                            </a>
+                        </li>
+                        <li class="nav-item mx-2">
+                            <a class="nav-link" href="#" data-bs-toggle="modal" data-bs-target="#loginModal">
+                                <i class="fas fa-right-to-bracket me-1"></i> Đăng nhập
+                            </a>
+                        </li>
+                    </ul>
+                }
+            </div>
+        </div>
+    </div>
+</nav>
+
+<!-- Mobile search form -->
+@if (ViewBag.HideNavElements != true)
+{
+    <div class="collapse" id="mobileSearchForm">
+        <div class="container py-2">
+            <form class="d-flex" asp-controller="Home" asp-action="Search" method="get">
+                <div class="input-group">
+                    <input class="form-control" type="search" name="query" placeholder="Nhập vào đây để tìm kiếm...">
+                    <button class="btn btn-search" type="submit">
+                        <i class="fas fa-magnifying-glass"></i>
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+}
+
+<!-- Toast container -->
+<div id="toast-container" class="position-fixed bottom-0 end-0 p-3" style="z-index: 1080;"></div>

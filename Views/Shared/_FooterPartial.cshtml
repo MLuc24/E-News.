@@ -1,0 +1,77 @@
+﻿<div class="footer-wave"></div>
+<div class="container">
+    <div class="row">
+        <div class="col-lg-4 col-md-6 mb-4 mb-md-0">
+            <div class="footer-info">
+                <h3>Web Báo Điện Tử</h3>
+                <p>Cập nhật tin tức mới nhất, nhanh nhất và chính xác nhất về các sự kiện trong nước và quốc tế.</p>
+                <div class="social-icons">
+                    <a href="https://www.facebook.com/pham.manhluc.5?mibextid=ZbWKwL" target="_blank" class="social-icon facebook" aria-label="Facebook">
+                        <i class="fab fa-facebook-f"></i>
+                    </a>
+                    <a href="https://www.instagram.com/phamluc0423/" target="_blank" class="social-icon instagram" aria-label="Instagram">
+                        <i class="fab fa-instagram"></i>
+                    </a>
+                    <a href="https://zalo.me" target="_blank" class="social-icon zalo" aria-label="Zalo">
+                        <i class="fab fa-telegram-plane"></i>
+                    </a>
+                </div>
+            </div>
+        </div>
+        <div class="col-lg-4 col-md-6 mb-4 mb-md-0">
+            <div class="footer-links">
+                <h4>Đội ngũ phát triển</h4>
+                <ul>
+                    <li><a asp-controller="Home" asp-action="Index"><i class="fas fa-angle-right"></i> Phạm Mạnh Lực</a></li>
+                    <li><a asp-controller="Home" asp-action="Privacy"><i class="fas fa-angle-right"></i> Lê Văn Đạt</a></li>
+                    <li><a asp-controller="News" asp-action="Create"><i class="fas fa-angle-right"></i> Lê Quốc Duy</a></li>
+                    <li><a asp-controller="News" asp-action="MyNews"><i class="fas fa-angle-right"></i> Trương Ngọc Dương</a></li>
+                </ul>
+            </div>
+        </div>
+        <div class="col-lg-4 col-md-12">
+            <div class="footer-newsletter">
+                <h4>Đăng ký nhận tin</h4>
+                <p>Đăng ký để nhận thông tin mới nhất từ chúng tôi</p>
+
+                <div class="newsletter-container">
+                    <!-- Subscription form -->
+                    <form id="footerSubscriptionForm" class="newsletter-form" asp-controller="Subscription" asp-action="Subscribe">
+                        @Html.AntiForgeryToken()
+                        <div class="input-group">
+                            <input type="email" name="email" id="footerEmail" placeholder="Email của bạn" required>
+                            <button type="submit" class="btn-subscribe"><i class="fas fa-paper-plane"></i></button>
+                        </div>
+                    </form>
+
+                    <!-- Unsubscribe form (initially hidden) -->
+                    <form id="footerUnsubscribeForm" class="newsletter-form" style="display: none;">
+                        @Html.AntiForgeryToken()
+                        <div class="input-group">
+                            <input type="email" name="email" id="footerUnsubEmail" placeholder="Email của bạn" required>
+                            <button type="submit" class="btn-unsubscribe"><i class="fas fa-times-circle"></i></button>
+                        </div>
+                    </form>
+
+                    <!-- Result message -->
+                    <div id="subscriptionResult" class="mt-2" style="display: none;"></div>
+
+                    <!-- Toggle between subscribe and unsubscribe -->
+                    <div class="mt-2">
+                        <a href="#" id="toggleSubscriptionMode" class="text-light">
+                            <small id="subscriptionToggleText"><i class="fas fa-times-circle me-1"></i>Hủy đăng ký</small>
+                        </a>
+                    </div>
+                </div>
+
+                <div class="mt-4">
+                    <p class="mb-2">Tải ứng dụng:</p>
+                    <div class="app-links">
+                        <a href="#" class="me-3"><i class="fab fa-google-play me-2"></i>Google Play</a>
+                        <a href="#"><i class="fab fa-app-store-ios me-2"></i>App Store</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

@@ -1,0 +1,277 @@
+﻿@model WebBaoDienTu.Models.News
+@using System.Security.Claims
+
+@{
+    ViewData["Title"] = Model?.Title ?? "Chi tiết bài viết";
+    Layout = "_Layout";
+}
+
+<link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" rel="stylesheet">
+<link rel="stylesheet" href="~/css/read-news.css" asp-append-version="true" />
+<link rel="stylesheet" href="~/css/comment.css" asp-append-version="true" />
+@Html.AntiForgeryToken()
+
+@{
+    string? userEmail = User?.FindFirstValue(ClaimTypes.Email);
+}
+
+@if (!string.IsNullOrEmpty(userEmail))
+{
+    <meta name="user-email" content="@userEmail">
+}
+
+@if (User.Identity.IsAuthenticated)
+{
+    <meta name="user-authenticated" content="true">
+    <meta name="user-id" content="@User.FindFirstValue(ClaimTypes.NameIdentifier)">
+    <meta name="user-is-admin" content="@User.IsInRole("Admin").ToString().ToLower()">
+}
+
+@if (Model?.Author != null)
+{
+    <meta name="article-author" content="@Model.Author.FullName">
+    <meta name="article-author-id" content="@Model.AuthorId">
+}
+
+<div class="news-container py-5">
+    <div class="row justify-content-center">
+        <div class="col-lg-10">
+            @if (!string.IsNullOrEmpty(Model?.ImageUrl))
+            {
+                <div class="text-center mb-4">
+                    <img src="@Model.ImageUrl" alt="Ảnh minh họa" class="img-fluid rounded shadow-sm news-image" style="max-height: 500px; object-fit: cover;">
+                </div>
+            }
+
+            <h1 class="custom-title fw-bold text-dark">@Model?.Title</h1>
+
+            <div class="news-content mb-5">
+                @Html.Raw(Model?.Content)
+            </div>
+
+            <div class="d-flex justify-content-between text-muted small mb-5">
+                <div>
+                    🕒 @Model?.CreatedAt.ToString("dd/MM/yyyy HH:mm")
+                    @if (Model?.Author != null)
+                    {
+                        <span> | 🖊️ Tác giả: <strong>@Model.Author.FullName</strong></span>
+                    }
+                    <span> | 👁️ Lượt đọc: <strong id="read-count">@Model.ReadCount</strong></span>
+                </div>
+                <a href="javascript:history.back()" class="btn btn-outline-secondary btn-back">
+                    <i class="fas fa-arrow-left"></i> Quay lại danh sách
+                </a>
+            </div>
+        </div>
+    </div>
+
+    @if (Model != null)
+    {
+        <button class="btn floating-share-btn" data-bs-toggle="modal" data-bs-target="#shareModal" title="Chia sẻ bài viết">
+            <i class="fas fa-share-alt"></i>
+        </button>
+
+        <div class="modal fade" id="shareModal" tabindex="-1" aria-labelledby="shareModalLabel" aria-hidden="true">
+            <div class="modal-dialog modal-dialog-centered">
+                <div class="modal-content share-modal">
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="shareModalLabel">
+                            <i class="fas fa-share-square me-2"></i> Chia sẻ bài viết
+                        </h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <form id="shareForm" asp-controller="Sharing" asp-action="Share" method="post">
+                        <div class="modal-body">
+                            <p class="text-muted mb-3">Gửi bài viết này đến email của bạn bè!</p>
+                            <input type="hidden" name="newsId" value="@Model.NewsId" />
+                            <div class="mb-3 form-group">
+                                <label for="email" class="form-label"><i class="fas fa-envelope me-1"></i> Email người nhận</label>
+                                <input type="email" class="form-control" id="email" name="email" required placeholder="Nhập email người nhận" />
+                                <div id="shareErrorMessage" class="text-danger mt-1" style="display: none;"></div>
+                            </div>
+                            <div class="mb-3 form-group">
+                                <label for="message" class="form-label"><i class="fas fa-comment-dots me-1"></i> Lời nhắn</label>
+                                <textarea class="form-control" id="message" name="message" rows="3" placeholder="Nhập lời nhắn của bạn"></textarea>
+                            </div>
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Đóng</button>
+                            <button type="submit" class="btn btn-primary btn-share">Chia sẻ</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    }
+
+    <!-- Comments Section -->
+    <div class="comment-section mt-4">
+        <div class="d-flex justify-content-between align-items-center mb-3">
+            <h4 class="mb-0">
+                <i class="fas fa-comments me-2"></i>Bình luận
+                <span id="comment-count" class="badge bg-secondary">0</span>
+            </h4>
+
+            @if (User.Identity.IsAuthenticated && (User.IsInRole("Admin") || (Model?.AuthorId.ToString() == User.FindFirstValue(ClaimTypes.NameIdentifier))))
+            {
+                <button class="btn btn-sm btn-outline-primary toggle-comment-moderation" type="button">
+                    <i class="fas fa-cog me-1"></i> Quản lý bình luận
+                </button>
+            }
+        </div>
+
+        <!-- Comment moderation tools - initially hidden -->
+        <div id="comment-moderation-tools" class="comment-moderation-tools mb-3" style="display: none;">
+            <div class="card">
+                <div class="card-header bg-light">
+                    <i class="fas fa-tools me-1"></i> Công cụ quản lý bình luận
+                </div>
+                <div class="card-body">
+                    <div class="d-flex flex-wrap gap-2">
+                        <button class="btn btn-sm btn-outline-warning bulk-hide-comments-btn">
+                            <i class="fas fa-eye-slash me-1"></i> Ẩn đã chọn
+                        </button>
+                        <button class="btn btn-sm btn-outline-success bulk-unhide-comments-btn">
+                            <i class="fas fa-eye me-1"></i> Hiện đã chọn
+                        </button>
+                        <button class="btn btn-sm btn-outline-danger bulk-delete-comments-btn">
+                            <i class="fas fa-trash-alt me-1"></i> Xóa đã chọn
+                        </button>
+                        <div class="form-check ms-auto">
+                            <input class="form-check-input" type="checkbox" id="select-all-comments">
+                            <label class="form-check-label" for="select-all-comments">Chọn tất cả</label>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Comment filters - Only visible to admins and article authors -->
+        @if (User.Identity.IsAuthenticated && (User.IsInRole("Admin") || (Model?.AuthorId.ToString() == User.FindFirstValue(ClaimTypes.NameIdentifier))))
+        {
+            <div class="comment-filters mb-3" id="comment-filters">
+                <div class="btn-group btn-group-sm">
+                    <button class="btn btn-outline-secondary comment-filter active" data-filter="all">
+                        Tất cả
+                    </button>
+                    <button class="btn btn-outline-secondary comment-filter" data-filter="author">
+                        Tác giả
+                    </button>
+                    <button class="btn btn-outline-secondary comment-filter" data-filter="member">
+                        Thành viên
+                    </button>
+                    <button class="btn btn-outline-secondary comment-filter" data-filter="guest">
+                        Khách
+                    </button>
+                    @if (User.IsInRole("Admin"))
+                    {
+                        <button class="btn btn-outline-secondary comment-filter" data-filter="hidden">
+                            Đã ẩn
+                        </button>
+                    }
+                </div>
+            </div>
+        }
+
+        <!-- Comments List -->
+        <div id="comments-container">
+            <!-- Comments will be loaded here -->
+            <div class="text-center py-3" id="comments-loading">
+                <div class="spinner-border text-primary" role="status">
+                    <span class="visually-hidden">Đang tải...</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- No Comments Message -->
+        <div id="no-comments" class="alert alert-light text-center d-none">
+            <i class="fas fa-comments me-2"></i> Chưa có bình luận nào. Hãy là người đầu tiên bình luận!
+        </div>
+
+        <!-- Comment Form -->
+        <div class="card mb-4 mt-4">
+            <div class="card-header bg-light">
+                <i class="fas fa-paper-plane me-2"></i>Viết bình luận
+            </div>
+            <div class="card-body">
+                <form id="comment-form">
+                    <input type="hidden" id="newsId" value="@Model.NewsId">
+                    <input type="hidden" id="parentCommentId" value="">
+
+                    @if (!User.Identity.IsAuthenticated)
+                    {
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <input type="text" class="form-control" id="guestName" placeholder="Tên của bạn *" required>
+                            </div>
+                            <div class="col-md-6">
+                                <input type="email" class="form-control" id="guestEmail" placeholder="Email *" required>
+                            </div>
+                        </div>
+                    }
+
+                    <div class="mb-3">
+                        <textarea class="form-control" id="commentContent" rows="3" placeholder="Viết bình luận của bạn..." required></textarea>
+                    </div>
+
+                    <div class="d-flex justify-content-between">
+                        <button type="button" id="cancel-reply" class="btn btn-sm btn-light d-none">Hủy trả lời</button>
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-paper-plane me-1"></i> Gửi bình luận
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- Comment Management Instructions for Authors/Admins -->
+        @if (User.Identity.IsAuthenticated && (User.IsInRole("Admin") || (Model?.AuthorId.ToString() == User.FindFirstValue(ClaimTypes.NameIdentifier))))
+        {
+            <div class="card mb-3 comment-management-tips">
+                <div class="card-header bg-light">
+                    <i class="fas fa-info-circle me-1"></i> Hướng dẫn quản lý bình luận
+                </div>
+                <div class="card-body">
+                    <p class="mb-1">Với tư cách là <strong>@(User.IsInRole("Admin") ? "quản trị viên" : "tác giả")</strong>, bạn có thể:</p>
+                    <ul class="mb-0">
+                        @if (User.IsInRole("Admin"))
+                        {
+                            <li>Xóa bất kỳ bình luận nào</li>
+                            <li>Ẩn/hiện bất kỳ bình luận nào</li>
+                            <li>Quản lý hàng loạt bình luận cùng lúc</li>
+                        }
+                        else
+                        {
+                            <li>Xóa bình luận của bạn</li>
+                            <li>Ẩn/hiện bình luận trên bài viết của bạn</li>
+                        }
+                        <li>Phím tắt: Ctrl+Shift+H (ẩn), Ctrl+Shift+U (hiện), Ctrl+Shift+D (xóa)</li>
+                    </ul>
+                </div>
+            </div>
+        }
+    </div>
+
+    @if (TempData["Success"] != null)
+    {
+        <div class="success-notification">
+            <i class="fas fa-check-circle"></i>
+            @TempData["Success"]
+        </div>
+    }
+
+    @if (TempData["Error"] != null)
+    {
+        <div class="alert alert-danger mt-3">
+            @TempData["Error"]
+        </div>
+    }
+</div>
+
+@section Scripts {
+    <!-- Make sure the script paths are correct and comment-combined.js loads first -->
+    <script src="~/js/NewsRead/Comment/comment-combined.js" asp-append-version="true"></script>
+    <script src="~/js/NewsRead/Comment/comment-operations.js" asp-append-version="true"></script>
+    <script src="~/js/NewsRead/Comment/comment-moderation.js" asp-append-version="true"></script>
+    <script src="~/js/NewsRead/news-read.js" asp-append-version="true"></script>
+}

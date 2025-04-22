@@ -1,0 +1,19 @@
+﻿<li>
+    <a class="dropdown-item" asp-controller="Profile" asp-action="Index">
+        <i class="fas fa-user-circle me-2"></i> Hồ sơ cá nhân
+    </a>
+</li>
+@if (User.IsInRole("Admin"))
+{
+    <li><a class="dropdown-item" asp-area="Admin" asp-controller="News" asp-action="Index"><i class="fas fa-list"></i> Danh sách tin tức</a></li>
+    <li><a class="dropdown-item" asp-controller="AdminUser" asp-action="Index" asp-route-area=""><i class="fas fa-users"></i> Quản lý người dùng</a></li>
+    <li><a class="dropdown-item" asp-controller="Subscription" asp-action="ManageSubscriptions"><i class="fas fa-envelope-open-text"></i> Quản lý đăng ký</a></li>
+}
+@if (User.IsInRole("User"))
+{
+    <li><a class="dropdown-item" asp-controller="UserNews" asp-action="MyNews"><i class="fas fa-history"></i> Lịch sử tin tức</a></li>
+}
+<li><a class="dropdown-item" asp-controller="Sharing" asp-action="MyShares"><i class="fas fa-share-alt"></i> Tin đã chia sẻ</a></li>
+<li><hr class="dropdown-divider"></li>
+<li><a class="dropdown-item" href="#" data-bs-toggle="modal" data-bs-target="#changePasswordModal"><i class="fas fa-key"></i> Đổi mật khẩu</a></li>
+<li><a class="dropdown-item" href="javascript:void(0);" onclick="logoutUser()"><i class="fas fa-sign-out-alt"></i> Đăng xuất</a></li>

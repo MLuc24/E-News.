@@ -1,0 +1,292 @@
+﻿@* Views/Admin/User/UserActivity.cshtml *@
+@model WebBaoDienTu.Models.User
+@{
+    ViewData["Title"] = $"Hoạt động người dùng: {Model.FullName}";
+    Layout = "_Layout";
+
+    // Get active tab from query string or default to "news"
+    var activeTab = (string.IsNullOrEmpty(Context.Request.Query["tab"])) ? "news" : Context.Request.Query["tab"].ToString();
+}
+
+<div class="container-fluid mt-4">
+    <!-- Breadcrumb navigation -->
+    <nav aria-label="breadcrumb">
+        <ol class="breadcrumb mb-3">
+            <li class="breadcrumb-item"><a asp-controller="Home" asp-action="Index">Trang chủ</a></li>
+            <li class="breadcrumb-item"><a asp-controller="AdminUser" asp-action="Index">Quản lý người dùng</a></li>
+            <li class="breadcrumb-item"><a asp-action="Details" asp-route-id="@Model.UserId">Chi tiết người dùng</a></li>
+            <li class="breadcrumb-item active">Hoạt động người dùng</li>
+        </ol>
+    </nav>
+
+    <!-- User header with basic info -->
+    <div class="card shadow-sm mb-4">
+        <div class="card-body">
+            <div class="d-flex align-items-center">
+                <div class="me-3">
+                    @if (!string.IsNullOrEmpty(Model.Profile?.AvatarUrl))
+                    {
+                        <img src="@Url.Content($"~/uploads/avatars/{Model.Profile.AvatarUrl}")"
+                             alt="Avatar" class="rounded-circle shadow-sm"
+                             style="width: 60px; height: 60px; object-fit: cover;">
+                    }
+                    else
+                    {
+                        <div class="rounded-circle bg-secondary text-white d-flex align-items-center justify-content-center shadow-sm"
+                             style="width: 60px; height: 60px;">
+                            <i class="fas fa-user fa-2x"></i>
+                        </div>
+                    }
+                </div>
+                <div>
+                    <div class="d-flex align-items-center mb-1">
+                        <h3 class="mb-0 me-2">@Model.FullName</h3>
+                        <span class="badge bg-@(Model.Role == "Admin" ? "danger" : Model.Role == "Editor" ? "primary" : "info")">
+                            @Model.Role
+                        </span>
+                        @if (Model.IsDeleted)
+                        {
+                            <span class="badge bg-danger ms-1">
+                                <i class="fas fa-ban me-1"></i> Đã vô hiệu hóa
+                            </span>
+                        }
+                    </div>
+                    <p class="text-muted mb-0">
+                        <i class="fas fa-envelope me-1"></i> @Model.Email
+                        <i class="fas fa-calendar-alt ms-3 me-1"></i> Đăng ký: @Model.CreatedAt.ToString("dd/MM/yyyy")
+                    </p>
+                </div>
+                <div class="ms-auto">
+                    <a asp-action="Details" asp-route-id="@Model.UserId" class="btn btn-outline-primary me-2">
+                        <i class="fas fa-user me-1"></i> Chi tiết người dùng
+                    </a>
+                    <button type="button" class="btn btn-outline-secondary edit-user-btn" data-userid="@Model.UserId">
+                        <i class="fas fa-edit me-1"></i> Chỉnh sửa
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Activity Tabs -->
+    <div class="card shadow-sm">
+        <div class="card-header bg-white p-0">
+            <ul class="nav nav-tabs card-header-tabs" id="activityTabs" role="tablist">
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link @(activeTab == "news" ? "active" : "")" id="news-tab"
+                            data-bs-toggle="tab" data-bs-target="#news-content" type="button"
+                            role="tab" aria-controls="news-content" aria-selected="@(activeTab == "news")">
+                        <i class="fas fa-newspaper me-2"></i>
+                        Tin tức
+                    </button>
+                </li>
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link @(activeTab == "comments" ? "active" : "")" id="comments-tab"
+                            data-bs-toggle="tab" data-bs-target="#comments-content" type="button"
+                            role="tab" aria-controls="comments-content" aria-selected="@(activeTab == "comments")">
+                        <i class="fas fa-comments me-2"></i>
+                        Bình luận
+                    </button>
+                </li>
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link @(activeTab == "sessions" ? "active" : "")" id="sessions-tab"
+                            data-bs-toggle="tab" data-bs-target="#sessions-content" type="button"
+                            role="tab" aria-controls="sessions-content" aria-selected="@(activeTab == "sessions")">
+                        <i class="fas fa-sign-in-alt me-2"></i>
+                        Phiên đăng nhập
+                    </button>
+                </li>
+            </ul>
+        </div>
+        <div class="card-body">
+            <div class="tab-content" id="activityTabsContent">
+                <!-- News Tab Content -->
+                <div class="tab-pane fade @(activeTab == "news" ? "show active" : "")" id="news-content"
+                     role="tabpanel" aria-labelledby="news-tab">
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <h5 class="mb-0">
+                            <i class="fas fa-newspaper me-2"></i>Danh sách bài viết
+                        </h5>
+                        <div class="input-group" style="width: 300px;">
+                            <input type="text" class="form-control" placeholder="Tìm kiếm tiêu đề..."
+                                   id="newsSearchInput">
+                            <button class="btn btn-outline-secondary" type="button" id="newsSearchButton">
+                                <i class="fas fa-search"></i>
+                            </button>
+                        </div>
+                    </div>
+
+                    <div id="newsListContainer" class="position-relative" data-userid="@Model.UserId">
+                        <!-- News list will be loaded dynamically via JavaScript -->
+                        <div class="text-center py-5">
+                            <div class="spinner-border text-primary" role="status">
+                                <span class="visually-hidden">Đang tải...</span>
+                            </div>
+                            <p class="mt-2 text-muted">Đang tải danh sách bài viết...</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Comments Tab Content -->
+                <div class="tab-pane fade @(activeTab == "comments" ? "show active" : "")" id="comments-content"
+                     role="tabpanel" aria-labelledby="comments-tab">
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <h5 class="mb-0">
+                            <i class="fas fa-comments me-2"></i>Danh sách bình luận
+                        </h5>
+                        <div class="input-group" style="width: 300px;">
+                            <input type="text" class="form-control" placeholder="Tìm kiếm nội dung..."
+                                   id="commentsSearchInput">
+                            <button class="btn btn-outline-secondary" type="button" id="commentsSearchButton">
+                                <i class="fas fa-search"></i>
+                            </button>
+                        </div>
+                    </div>
+
+                    <div id="commentsListContainer" class="position-relative" data-userid="@Model.UserId">
+                        <!-- Comments list will be loaded dynamically via JavaScript -->
+                        <div class="text-center py-5">
+                            <div class="spinner-border text-primary" role="status">
+                                <span class="visually-hidden">Đang tải...</span>
+                            </div>
+                            <p class="mt-2 text-muted">Đang tải danh sách bình luận...</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Sessions Tab Content -->
+                <div class="tab-pane fade @(activeTab == "sessions" ? "show active" : "")" id="sessions-content"
+                     role="tabpanel" aria-labelledby="sessions-tab">
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <h5 class="mb-0">
+                            <i class="fas fa-sign-in-alt me-2"></i>Lịch sử phiên đăng nhập
+                        </h5>
+                        <div class="form-check form-switch">
+                            <input class="form-check-input" type="checkbox" id="showActiveSessionsOnly">
+                            <label class="form-check-label" for="showActiveSessionsOnly">Chỉ hiện phiên hoạt động</label>
+                        </div>
+                    </div>
+
+                    <div id="sessionsListContainer" class="position-relative" data-userid="@Model.UserId">
+                        <!-- Sessions list will be loaded dynamically via JavaScript -->
+                        <div class="text-center py-5">
+                            <div class="spinner-border text-primary" role="status">
+                                <span class="visually-hidden">Đang tải...</span>
+                            </div>
+                            <p class="mt-2 text-muted">Đang tải lịch sử phiên đăng nhập...</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Templates for dynamic content -->
+<template id="newsRowTemplate">
+    <div class="card mb-3">
+        <div class="card-body">
+            <div class="d-flex justify-content-between align-items-start">
+                <div>
+                    <h5 class="card-title">{{title}}</h5>
+                    <p class="card-text text-truncate">{{description}}</p>
+                    <div class="d-flex align-items-center small text-muted">
+                        <span class="me-3"><i class="fas fa-folder me-1"></i>{{categoryName}}</span>
+                        <span class="me-3"><i class="fas fa-eye me-1"></i>{{readCount}} lượt đọc</span>
+                        <span><i class="fas fa-calendar me-1"></i>{{createdAt}}</span>
+                    </div>
+                </div>
+                <div class="d-flex flex-column align-items-end ms-3">
+                    <span class="badge bg-{{approvedBadge}} mb-2">{{approvedText}}</span>
+                    <a href="/News/Read/{{newsId}}" class="btn btn-sm btn-outline-primary" target="_blank">
+                        <i class="fas fa-external-link-alt me-1"></i>Xem
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</template>
+
+<template id="commentRowTemplate">
+    <div class="card mb-3">
+        <div class="card-body">
+            <div class="d-flex justify-content-between align-items-start">
+                <div>
+                    <div class="d-flex align-items-center mb-2">
+                        <h6 class="mb-0">
+                            <i class="fas fa-comment me-2"></i>Bình luận trên bài:
+                        </h6>
+                        <a href="/News/Read/{{newsId}}" class="ms-2" target="_blank">{{newsTitle}}</a>
+                    </div>
+                    <div class="comment-content mb-2">{{content}}</div>
+                    <div class="small text-muted">
+                        <i class="fas fa-calendar me-1"></i>{{createdAt}}
+                    </div>
+                </div>
+                <div class="ms-3 text-end">
+                    <div class="mb-2">
+                        <span class="badge bg-{{statusBadge}}">{{statusText}}</span>
+                    </div>
+                    <a href="/News/Read/{{newsId}}#comment-{{commentId}}" class="btn btn-sm btn-outline-primary" target="_blank">
+                        <i class="fas fa-external-link-alt me-1"></i>Xem
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</template>
+
+<template id="sessionRowTemplate">
+    <div class="card mb-3">
+        <div class="card-body">
+            <div class="row align-items-center">
+                <div class="col-md-4">
+                    <div class="d-flex align-items-center">
+                        <i class="fas fa-{{deviceIcon}} fa-2x text-primary me-3"></i>
+                        <div>
+                            <h6 class="mb-1">{{deviceInfo}}</h6>
+                            <div class="small text-muted">
+                                <i class="fas fa-network-wired me-1"></i>{{ipAddress}}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-5">
+                    <div class="row g-2">
+                        <div class="col-6">
+                            <div class="small text-muted">Đăng nhập:</div>
+                            <div>{{createdAt}}</div>
+                        </div>
+                        <div class="col-6">
+                            <div class="small text-muted">Hoạt động cuối:</div>
+                            <div>{{lastActivity}}</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3 text-end">
+                    <span class="badge bg-{{statusBadge}} mb-2">{{statusText}}</span>
+                    {{terminateButton}}
+                </div>
+            </div>
+        </div>
+    </div>
+</template>
+
+<!-- Edit User Modal will be dynamically loaded by user-management.js -->
+@section Scripts {
+    <script src="~/js/Admin/user-details.js" asp-append-version="true"></script>
+    <script src="~/js/Admin/user-management.js" asp-append-version="true"></script>
+    <script src="~/js/Admin/user-activity.js" asp-append-version="true"></script>
+
+    <script>
+        // Initialize after DOM is ready
+        document.addEventListener('DOMContentLoaded', function() {
+            // Load active tab's data
+            const userId = @Model.UserId;
+            const activeTab = '@activeTab';
+
+            // Initialize activity view
+            initUserActivityView(userId, activeTab);
+        });
+    </script>
+}

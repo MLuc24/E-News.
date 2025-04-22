@@ -1,0 +1,439 @@
+﻿@* Views/Admin/User/Index.cshtml - Improved *@
+@model List<WebBaoDienTu.Models.User>
+@{
+    ViewData["Title"] = "Quản lý người dùng";
+    Layout = "_Layout";
+    var currentPage = ViewBag.CurrentPage;
+    var totalPages = ViewBag.TotalPages;
+    var totalUsers = ViewBag.TotalUsers;
+    var availableRoles = ViewBag.AvailableRoles as List<string>;
+}
+
+<div class="container-fluid mt-4">
+    <!-- Header with actions -->
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <div>
+            <h1 class="mb-0">Quản lý người dùng</h1>
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb mb-0">
+                    <li class="breadcrumb-item"><a asp-controller="Home" asp-action="Index">Trang chủ</a></li>
+                    <li class="breadcrumb-item active">Quản lý người dùng</li>
+                </ol>
+            </nav>
+        </div>
+        <a href="javascript:void(0);" id="createUserBtn" class="btn btn-primary">
+            <i class="fas fa-user-plus me-1"></i> Thêm người dùng mới
+        </a>
+    </div>
+
+    <!-- Alerts for feedback -->
+    <partial name="_AlertsPartial" />
+
+    <!-- Filter card with collapsible content -->
+    <div class="card shadow-sm mb-4">
+        <div class="card-header bg-white d-flex justify-content-between align-items-center py-2">
+            <h5 class="mb-0">
+                <i class="fas fa-filter me-2"></i>Bộ lọc tìm kiếm
+            </h5>
+            <button class="btn btn-sm btn-outline-secondary" type="button" data-bs-toggle="collapse" data-bs-target="#filtersCollapse">
+                <i class="fas fa-caret-down me-1"></i><span class="d-none d-sm-inline">Ẩn/Hiện</span>
+            </button>
+        </div>
+        <div class="collapse show" id="filtersCollapse">
+            <div class="card-body">
+                <form asp-action="Index" method="get" id="filterForm" class="needs-validation" novalidate>
+                    <div class="row g-3">
+                        <!-- Improved search field -->
+                        <div class="col-md-4">
+                            <div class="input-group">
+                                <span class="input-group-text"><i class="fas fa-search"></i></span>
+                                <input type="text" name="searchTerm" class="form-control"
+                                       placeholder="Tìm theo tên hoặc email" value="@ViewBag.SearchTerm">
+                            </div>
+                        </div>
+
+                        <!-- Role filter -->
+                        <div class="col-md-2">
+                            <select name="role" class="form-select">
+                                <option value="">-- Tất cả vai trò --</option>
+                                @if (availableRoles != null)
+                                {
+                                    foreach (var role in availableRoles.Where(r => r != "Admin"))
+                                    {
+                                        <option value="@role" selected="@(ViewBag.Role == role)">@role</option>
+                                    }
+                                }
+                            </select>
+                        </div>
+
+                        <!-- Verification status filter -->
+                        <div class="col-md-2">
+                            <select name="isVerified" class="form-select">
+                                <option value="">-- Trạng thái xác minh --</option>
+                                <option value="true" selected="@(ViewBag.IsVerified == true)">Đã xác minh</option>
+                                <option value="false" selected="@(ViewBag.IsVerified == false)">Chưa xác minh</option>
+                            </select>
+                        </div>
+
+                        <!-- Account status filter -->
+                        <div class="col-md-2">
+                            <select name="isDeleted" class="form-select">
+                                <option value="">-- Trạng thái tài khoản --</option>
+                                <option value="false" selected="@(ViewBag.IsDeleted == false)">Đang hoạt động</option>
+                                <option value="true" selected="@(ViewBag.IsDeleted == true)">Đã vô hiệu hóa</option>
+                            </select>
+                        </div>
+
+                        <!-- Filter button -->
+                        <div class="col-md-2">
+                            <button type="submit" class="btn btn-primary w-100">
+                                <i class="fas fa-filter me-1"></i> Áp dụng lọc
+                            </button>
+                        </div>
+                    </div>
+                    <input type="hidden" name="page" value="1" id="pageInput" />
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- User listing card with responsive table -->
+    <div class="card shadow-sm">
+        <div class="card-header bg-white d-flex justify-content-between align-items-center py-2">
+            <h5 class="mb-0">
+                <i class="fas fa-users me-2"></i>Danh sách người dùng
+            </h5>
+            <span class="badge bg-primary">@totalUsers người dùng</span>
+        </div>
+
+        <!-- Responsive table with improved styling -->
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0">
+                <thead class="table-light">
+                    <tr>
+                        <th scope="col">#</th>
+                        <th scope="col">Thông tin người dùng</th>
+                        <th scope="col">Liên hệ</th>
+                        <th scope="col">Trạng thái</th>
+                        <th scope="col" class="text-end">Thao tác</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @if (Model != null && Model.Any())
+                    {
+                        foreach (var user in Model)
+                        {
+                            <tr class="@(user.IsDeleted ? "table-danger" : "")">
+                                <td>@user.UserId</td>
+                                <td>
+                                    <div class="d-flex align-items-center">
+                                        @if (!string.IsNullOrEmpty(user.Profile?.AvatarUrl))
+                                        {
+                                            <img src="@Url.Content($"~/uploads/avatars/{user.Profile.AvatarUrl}")"
+                                                 alt="Avatar" class="rounded-circle me-2"
+                                                 style="width: 40px; height: 40px; object-fit: cover;">
+                                        }
+                                        else
+                                        {
+                                            <div class="rounded-circle bg-secondary text-white d-flex align-items-center justify-content-center me-2"
+                                                 style="width: 40px; height: 40px;">
+                                                <i class="fas fa-user"></i>
+                                            </div>
+                                        }
+                                        <div>
+                                            <h6 class="mb-0">@user.FullName</h6>
+                                            <div>
+                                                <span class="badge bg-info">@user.Role</span>
+                                                @if (!user.IsEmailVerified)
+                                                {
+                                                    <span class="badge bg-warning ms-1" title="Email chưa được xác minh">
+                                                        <i class="fas fa-exclamation-triangle"></i> Chưa xác minh
+                                                    </span>
+                                                }
+                                            </div>
+                                        </div>
+                                    </div>
+                                </td>
+                                <td>
+                                    <div>
+                                        <small><i class="fas fa-envelope me-1"></i> @user.Email</small>
+                                        @if (!string.IsNullOrEmpty(user.Profile?.PhoneNumber))
+                                        {
+                                            <br />
+                                            <small><i class="fas fa-phone me-1"></i> @user.Profile.PhoneNumber</small>
+                                        }
+                                    </div>
+                                </td>
+                                <td>
+                                    <div>
+                                        @if (user.IsDeleted)
+                                        {
+                                            <span class="badge bg-danger"><i class="fas fa-ban me-1"></i> Đã vô hiệu hóa</span>
+                                        }
+                                        else
+                                        {
+                                            <span class="badge bg-success"><i class="fas fa-check-circle me-1"></i> Đang hoạt động</span>
+                                        }
+                                        <br />
+                                        <small class="text-muted">Đăng ký: @user.CreatedAt.ToString("dd/MM/yyyy")</small>
+                                    </div>
+                                </td>
+                                <td>
+                                    <div class="d-flex justify-content-end gap-2">
+                                        <a href="@Url.Action("Details", new { id = user.UserId })"
+                                           class="btn btn-sm btn-outline-primary" title="Chi tiết">
+                                            <i class="fas fa-info-circle"></i>
+                                        </a>
+                                        <button class="btn btn-sm btn-outline-info view-user-activity-btn"
+                                                data-userid="@user.UserId" title="Xem hoạt động">
+                                            <i class="fas fa-chart-line"></i>
+                                        </button>
+                                        <button class="btn btn-sm btn-outline-secondary edit-user-btn"
+                                                data-userid="@user.UserId" title="Chỉnh sửa">
+                                            <i class="fas fa-edit"></i>
+                                        </button>
+                                        <form asp-action="ToggleStatus" asp-route-id="@user.UserId" method="post"
+                                              onsubmit="return confirm('@(user.IsDeleted ? "Kích hoạt lại tài khoản này?" : "Vô hiệu hóa tài khoản này?")');">
+                                            @Html.AntiForgeryToken()
+                                            <button type="submit" class="btn btn-sm btn-@(user.IsDeleted ? "outline-success" : "outline-danger")"
+                                                    title="@(user.IsDeleted ? "Kích hoạt" : "Vô hiệu hóa")">
+                                                <i class="fas fa-@(user.IsDeleted ? "user-check" : "user-times")"></i>
+                                            </button>
+                                        </form>
+                                    </div>
+                                </td>
+                            </tr>
+                        }
+                    }
+                    else
+                    {
+                        <tr>
+                            <td colspan="5" class="text-center py-4">
+                                <div class="py-5 text-muted">
+                                    <i class="fas fa-search fa-3x mb-3"></i>
+                                    <p class="mb-0">Không tìm thấy người dùng nào phù hợp với tiêu chí tìm kiếm</p>
+                                </div>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Pagination controls -->
+        @if (totalPages > 1)
+        {
+            <div class="card-footer bg-white">
+                <nav aria-label="Phân trang">
+                    <ul class="pagination justify-content-center mb-0">
+                        <li class="page-item @(currentPage == 1 ? "disabled" : "")">
+                            <a class="page-link" href="javascript:void(0)" onclick="changePage(1)"
+                               aria-label="Trang đầu tiên">
+                                <i class="fas fa-angle-double-left"></i>
+                            </a>
+                        </li>
+                        <li class="page-item @(currentPage == 1 ? "disabled" : "")">
+                            <a class="page-link" href="javascript:void(0)" onclick="changePage(@(currentPage - 1))"
+                               aria-label="Trang trước">
+                                <i class="fas fa-angle-left"></i>
+                            </a>
+                        </li>
+
+                        @{
+                            int startPage = Math.Max(1, currentPage - 2);
+                            int endPage = Math.Min(totalPages, startPage + 4);
+
+                            if (endPage - startPage < 4)
+                            {
+                                startPage = Math.Max(1, endPage - 4);
+                            }
+                        }
+
+                        @for (int i = startPage; i <= endPage; i++)
+                        {
+                            <li class="page-item @(i == currentPage ? "active" : "")">
+                                <a class="page-link" href="javascript:void(0)" onclick="changePage(@i)">@i</a>
+                            </li>
+                        }
+
+                        <li class="page-item @(currentPage == totalPages ? "disabled" : "")">
+                            <a class="page-link" href="javascript:void(0)" onclick="changePage(@(currentPage + 1))"
+                               aria-label="Trang sau">
+                                <i class="fas fa-angle-right"></i>
+                            </a>
+                        </li>
+                        <li class="page-item @(currentPage == totalPages ? "disabled" : "")">
+                            <a class="page-link" href="javascript:void(0)" onclick="changePage(@totalPages)"
+                               aria-label="Trang cuối">
+                                <i class="fas fa-angle-double-right"></i>
+                            </a>
+                        </li>
+                    </ul>
+                </nav>
+            </div>
+        }
+    </div>
+</div>
+
+<!-- User Creation Modal - Improved form validation and organization-->
+<div class="modal fade" id="createUserModal" tabindex="-1" aria-labelledby="createUserModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="createUserModalLabel">
+                    <i class="fas fa-user-plus me-2"></i>Thêm người dùng mới
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form id="userCreateForm" class="needs-validation" novalidate>
+                @Html.AntiForgeryToken()
+                <div class="modal-body">
+                    <ul class="nav nav-tabs mb-3" id="createUserTabs" role="tablist">
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link active" id="account-tab" data-bs-toggle="tab"
+                                    data-bs-target="#account-info" type="button" role="tab"
+                                    aria-controls="account-info" aria-selected="true">
+                                Thông tin tài khoản
+                            </button>
+                        </li>
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link" id="profile-tab" data-bs-toggle="tab"
+                                    data-bs-target="#profile-info" type="button" role="tab"
+                                    aria-controls="profile-info" aria-selected="false">
+                                Thông tin cá nhân
+                            </button>
+                        </li>
+                    </ul>
+
+                    <div class="tab-content" id="createUserTabsContent">
+                        <!-- Account Information Tab -->
+                        <div class="tab-pane fade show active" id="account-info" role="tabpanel" aria-labelledby="account-tab">
+                            <div class="mb-3">
+                                <label for="userName" class="form-label">Họ tên <span class="text-danger">*</span></label>
+                                <input type="text" class="form-control" id="userName" required>
+                                <div class="invalid-feedback">Vui lòng nhập họ tên người dùng</div>
+                            </div>
+                            <div class="mb-3">
+                                <label for="userEmail" class="form-label">Email <span class="text-danger">*</span></label>
+                                <input type="email" class="form-control" id="userEmail" required>
+                                <div class="invalid-feedback">Vui lòng nhập địa chỉ email hợp lệ</div>
+                            </div>
+                            <div class="mb-3">
+                                <label for="userPassword" class="form-label">Mật khẩu <span class="text-danger">*</span></label>
+                                <div class="input-group">
+                                    <input type="password" class="form-control" id="userPassword" required minlength="6">
+                                    <button class="btn btn-outline-secondary" type="button" id="toggleCreatePassword">
+                                        <i class="fas fa-eye"></i>
+                                    </button>
+                                </div>
+                                <div class="form-text">Mật khẩu phải có ít nhất 6 ký tự</div>
+                                <div class="invalid-feedback">Mật khẩu phải có ít nhất 6 ký tự</div>
+                            </div>
+                            <div class="mb-3">
+                                <label for="userConfirmPassword" class="form-label">
+                                    Xác nhận mật khẩu <span class="text-danger">*</span>
+                                </label>
+                                <input type="password" class="form-control" id="userConfirmPassword" required>
+                                <div class="invalid-feedback">Mật khẩu xác nhận không khớp</div>
+                            </div>
+                            <div class="mb-3">
+                                <label for="userRole" class="form-label">Vai trò <span class="text-danger">*</span></label>
+                                <select class="form-select" id="userRole" required>
+                                    <option value="">-- Chọn vai trò --</option>
+                                    <option value="User" selected>User</option>
+                                </select>
+                                <div class="invalid-feedback">Vui lòng chọn vai trò cho người dùng</div>
+                            </div>
+                            <div class="mb-3 form-check">
+                                <input type="checkbox" class="form-check-input" id="userEmailVerified">
+                                <label class="form-check-label" for="userEmailVerified">
+                                    Đánh dấu email đã được xác minh
+                                </label>
+                                <div class="form-text">
+                                    Nếu không chọn, người dùng sẽ cần xác minh email trước khi đăng nhập
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Personal Information Tab -->
+                        <div class="tab-pane fade" id="profile-info" role="tabpanel" aria-labelledby="profile-tab">
+                            <div class="mb-3">
+                                <label for="userPhone" class="form-label">Số điện thoại</label>
+                                <input type="tel" class="form-control" id="userPhone" pattern="[0-9]{10,11}">
+                                <div class="form-text">Số điện thoại 10-11 số, không bao gồm ký tự đặc biệt</div>
+                                <div class="invalid-feedback">Vui lòng nhập số điện thoại hợp lệ</div>
+                            </div>
+                            <div class="mb-3">
+                                <label for="userDateOfBirth" class="form-label">Ngày sinh</label>
+                                <input type="date" class="form-control" id="userDateOfBirth">
+                            </div>
+                            <div class="mb-3">
+                                <label for="userGender" class="form-label">Giới tính</label>
+                                <select class="form-select" id="userGender">
+                                    <option value="">-- Chọn giới tính --</option>
+                                    <option value="Nam">Nam</option>
+                                    <option value="Nữ">Nữ</option>
+                                    <option value="Khác">Khác</option>
+                                </select>
+                            </div>
+                            <div class="mb-3">
+                                <label for="userAddress" class="form-label">Địa chỉ</label>
+                                <textarea class="form-control" id="userAddress" rows="3"></textarea>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Hủy</button>
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-user-plus me-1"></i> Tạo người dùng
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Similar improvements for Edit User Modal -->
+@section Scripts {
+    <script src="~/js/Admin/user-management.js" asp-append-version="true"></script>
+    <script src="~/js/Admin/user-activity.js" asp-append-version="true"></script>
+    <script>
+        // Pagination function
+        function changePage(page) {
+            document.getElementById('pageInput').value = page;
+            document.getElementById('filterForm').submit();
+        }
+
+        // Bootstrap form validation
+        document.addEventListener('DOMContentLoaded', function() {
+            'use strict';
+
+            // Fetch all forms we want to apply validation styles to
+            const forms = document.querySelectorAll('.needs-validation');
+
+            // Loop over them and prevent submission
+            Array.from(forms).forEach(function(form) {
+                form.addEventListener('submit', function(event) {
+                    if (!form.checkValidity()) {
+                        event.preventDefault();
+                        event.stopPropagation();
+                    }
+                    form.classList.add('was-validated');
+                }, false);
+            });
+
+            // Password visibility toggle
+            const toggleCreateBtn = document.getElementById('toggleCreatePassword');
+            if (toggleCreateBtn) {
+                toggleCreateBtn.addEventListener('click', function() {
+                    const pwField = document.getElementById('userPassword');
+                    const type = pwField.getAttribute('type') === 'password' ? 'text' : 'password';
+                    pwField.setAttribute('type', type);
+                    this.querySelector('i').classList.toggle('fa-eye');
+                    this.querySelector('i').classList.toggle('fa-eye-slash');
+                });
+            }
+        });
+    </script>
+}

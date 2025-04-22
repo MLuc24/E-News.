@@ -1,0 +1,90 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>@ViewData["Title"] - WebBaoDienTu</title>
+    
+    <!-- CSS Libraries -->
+    <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" integrity="sha512-DTOQO9RWCH3ppGqcWaEA1BIZOC6xxalwEsw9c2QQeAIftl+Vegovlnee1c9QX4TctnWMn13TZye+giMm8e2LwA==" crossorigin="anonymous" referrerpolicy="no-referrer" />
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;700&display=swap" rel="stylesheet">
+    
+    <!-- App CSS -->
+    <link rel="stylesheet" href="~/css/layout/title.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/css/layout/auth.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/css/layout/notification.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/css/global-button-effects.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/css/layout/footer.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/css/layout/social-login.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/css/profile.css" />
+    
+    @RenderSection("Styles", required: false)
+    @Html.AntiForgeryToken()
+</head>
+<body>
+    <header>
+        @await Html.PartialAsync("_NavigationPartial")
+        @await Html.PartialAsync("_AuthModalsPartial")
+    </header>
+
+    <div class="container">
+        <main role="main" class="pb-3">
+            <div class="container">
+                @if (TempData["SuccessMessage"] != null)
+                {
+                    <div class="alert alert-success alert-dismissible fade show" role="alert">
+                        <i class="fas fa-check-circle me-2"></i> @TempData["SuccessMessage"]
+                        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                    </div>
+                }
+                @if (TempData["ErrorMessage"] != null)
+                {
+                    <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                        <i class="fas fa-exclamation-triangle me-2"></i> @TempData["ErrorMessage"]
+                        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                    </div>
+                }
+                @RenderBody()
+            </div>
+        </main>
+    </div>
+
+    <footer class="footer-area">
+        @await Html.PartialAsync("_FooterPartial")
+    </footer>
+
+    <!-- Scripts -->
+    <script src="~/lib/jquery/dist/jquery.min.js"></script>
+    <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
+    <!-- App Scripts -->
+    <script src="~/js/Layout/modules/ui.js" type="module" asp-append-version="true"></script>
+    <script src="~/js/Layout/modules/auth.js" type="module" asp-append-version="true"></script>
+    <script src="~/js/Layout/modules/notification.js" type="module" asp-append-version="true"></script>
+    <script src="~/js/Layout/modules/social-login.js" type="module" asp-append-version="true"></script>
+    <script src="~/js/Layout/modules/session.js" type="module" asp-append-version="true"></script>
+    <script src="~/js/Layout/modules/password-reset.js" type="module" asp-append-version="true"></script>
+    <script src="~/js/Layout/layout.js" type="module" asp-append-version="true"></script>
+    <script src="~/js/hover-dropdown.js" asp-append-version="true"></script>
+    <script src="~/js/global-button-effects.js" asp-append-version="true"></script>
+    <script src="~/js/Subscription/subscribe.js" asp-append-version="true"></script>
+
+    <script type="text/javascript">
+        document.addEventListener('DOMContentLoaded', function() {
+            document.getElementById('forgotPasswordLink')?.addEventListener('click', function(e) {
+                e.preventDefault();
+                $('#loginModal').modal('hide');
+                $('#forgotPasswordModal').modal('show');
+            });
+        });
+    </script>
+
+    @await RenderSectionAsync("Scripts", required: false)
+</body>
+</html>
